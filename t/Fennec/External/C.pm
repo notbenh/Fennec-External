@@ -9,7 +9,8 @@ BEGIN {
     can_ok( __PACKAGE__, 'testc' );
 }
 
-exit 0 if system( 'gcc --help > /dev/null' );
+die "SKIP: This test requires GCC\n"
+    if system( 'gcc --help > /dev/null' );
 
 Fennec::Runner->c_compiler( 'gcc' );
 Fennec::Runner->c_compiler_out_flag( '-o' );
