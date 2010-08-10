@@ -8,7 +8,7 @@ use Fennec::Util::Accessors;
 use Carp;
 
 add_config $_ for qw/ c_compiler c_compiler_args c_compiler_out_flag /;
-Accessors qw/ c_compiler c_compiler_args c_compiler_out_flag /;
+Accessors qw/ c_compiler c_compiler_args c_compiler_out_flag no_tap_merge /;
 
 sub execute {
     my $self = shift;
@@ -31,17 +31,23 @@ sub execute {
         $outfile,
     );
 
-    system( $cmd ) && die ( "$!" );
+    if ( system( $cmd )) {
+        unlink $filename;
+        die ( "$!" );
+    }
 
     die "Could not find compiled file $outfile!"
         unless -e $outfile;
 
     my $TAP = `./$outfile`;
+    my $out = !$?;
+
     unlink( $filename );
     unlink( $outfile );
 
-    $self->merge_tap( $TAP );
-    my $out = !$?;
+    $self->merge_tap( $TAP )
+        unless $self->no_tap_merge;
+
     return $out;
 }
 
@@ -61,6 +67,7 @@ void ok( int result, char* name ) {
 
 int main(void) {
     $code
+    return 0;
 }
 TEMPLATE
 }

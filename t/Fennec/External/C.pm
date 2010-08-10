@@ -16,12 +16,19 @@ Fennec::Runner->c_compiler_out_flag( '-o' );
 
 testc its_ok => <<C_CODE;
     ok( 1, "Should pass" );
+    ok( 1, "Another");
+    // prove it is C not perl
+    int *x;
+    int y = 1;
+    x = &y;
+    ok( *x, "Proof this is C" );
 C_CODE
 
 testc its_not_ok => (
-    todo => 'Not really todo, testing a fail in the C',
+    no_tap_merge => 1,
     code => <<'    C_CODE',
-        ok( 0, "Should fail todo" );
+        ok( 0, "Should fail" );
     C_CODE
 );
+
 1;

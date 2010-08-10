@@ -4,9 +4,11 @@ use warnings;
 
 use Fennec::Util::Accessors;
 use Carp;
+use TAP::Parser;
 
 use Fennec::Util::Alias qw/
     Fennec::Output::Result
+    Fennec::Output::Diag
 /;
 
 Accessors qw/code/;
@@ -24,8 +26,8 @@ sub run_on {
     my $ok = $self->execute( @_ ) || 0;
     Result->new(
         pass => $ok,
-        name => $self->name
-    );
+        name => "Return ok: " . $self->name
+    )->write;
 }
 
 sub import {
@@ -71,7 +73,37 @@ sub new {
 
 sub merge_tap {
     my $self = shift;
-    warn @_;
+    my ( $tap ) = @_;
+    my $parser = TAP::Parser->new( { source => $tap } );
+    while ( my $result = $parser->next ) {
+        $self->_merge_result( $result )
+            if $result->is_test;
+        $self->_merge_comment( $result )
+            if $result->is_comment;
+    }
+}
+
+sub _merge_result {
+    my $self = shift;
+    my ( $result ) = @_;
+    Result->new(
+        pass => $result->is_actual_ok || 0,
+        name => ("C Result " . $result->description) || "unnamed test",
+        $result->has_skip
+            ? ( skip => $result->explanation )
+            : (),
+        $result->has_todo
+            ? ( todo => $result->explanation )
+            : (),
+    )->write;
+}
+
+sub _merge_comment {
+    my $self = shift;
+    my ( $result ) = @_;
+    my $msg = $result->as_string;
+    $msg =~ s/^#//;
+    Diag->new( stderr => $msg )->write;
 }
 
 1;
