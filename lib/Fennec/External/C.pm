@@ -7,32 +7,36 @@ use Fennec::Runner qw/ add_config /;
 use Fennec::Util::Accessors;
 use Carp;
 
-add_config $_ for qw/ c_compiler c_compiler_args c_compiler_out_flag /;
-Accessors qw/ c_compiler c_compiler_args c_compiler_out_flag no_tap_merge /;
+add_config $_ for qw/ c_compiler c_compiler_args /;
+Accessors qw/ c_compiler c_compiler_args no_tap_merge /;
 
 sub execute {
     my $self = shift;
     my ( $testobj ) = @_;
-    my ($fh, $filename) = tempfile( "XXXXXX", SUFFIX => '.c' );
+    my ($fh, $infile) = tempfile( "XXXXXX", SUFFIX => '.c' );
     print $fh $self->template;
     close( $fh );
 
-    my $outfile = "$filename.compiled";
+    my $outfile = "$infile.compiled";
+
+    my $args = $self->c_compiler_args
+            || Fennec::Runner->c_compiler_args
+            || "";
+
+    if ( $args ) {
+        $args = eval "qq{$args}";
+        die( $@ ) unless $args;
+    }
 
     my $cmd = join( " ",
         $self->c_compiler
             || Fennec::Runner->c_compiler
             || croak( "No compiler specified, use c_compiler config option" ),
-        $self->c_compiler_args
-            || Fennec::Runner->c_compiler_args
-            || "",
-        $filename,
-        $self->c_compiler_out_flag || Fennec::Runner->c_compiler_out_flag,
-        $outfile,
+        $args,
     );
 
     if ( system( $cmd )) {
-        unlink $filename;
+        unlink $infile;
         die ( "$!" );
     }
 
@@ -42,7 +46,7 @@ sub execute {
     my $TAP = `./$outfile`;
     my $out = !$?;
 
-    unlink( $filename );
+    unlink( $infile );
     unlink( $outfile );
 
     $self->merge_tap( $TAP )

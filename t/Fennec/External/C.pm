@@ -2,6 +2,7 @@ package TEST::Fennec::External::C;
 use strict;
 use warnings;
 use Fennec;
+use File::Which qw(which);
 
 BEGIN {
     require_ok Fennec::External::C;
@@ -10,10 +11,9 @@ BEGIN {
 }
 
 die "SKIP: This test requires GCC\n"
-    if system( 'gcc --help > /dev/null' );
+    unless Fennec::Runner->c_compiler( scalar( which( 'gcc' )));
 
-Fennec::Runner->c_compiler( 'gcc' );
-Fennec::Runner->c_compiler_out_flag( '-o' );
+Fennec::Runner->c_compiler_args( '$infile -o $outfile' );
 
 testc its_ok => <<C_CODE;
     ok( 1, "Should pass" );
