@@ -2,7 +2,6 @@ package Fennec::External;
 use strict;
 use warnings;
 
-use Exporter::Declare;
 use Fennec::Util::Accessors;
 use Carp;
 
@@ -16,12 +15,12 @@ use base 'Fennec::TestSet';
 
 our $VERSION = "0.001";
 
-sub keyword { croak "must override keyword()"         }
 sub execute { croak "must override execute()"         }
 sub method  { confess "method() should not be called" }
 
 sub run_on {
     my $self = shift;
+    $self->observed(1);
     my $ok = $self->execute( @_ ) || 0;
     Result->new(
         pass => $ok,
@@ -31,24 +30,29 @@ sub run_on {
 
 sub import {
     my $class = shift;
+    my ( $keyword ) = @_;
     my $exporter = caller;
-    $class->export(
-        $class->keyword,
+    {
+        no strict 'refs';
+        push @{ "$exporter\::ISA" } => $class;
+        *{ "$exporter\::import" } = \&_import;
+    }
+    $exporter->export(
+        $keyword || croak ("You must provide a keyword"),
         sub {
             my $name = shift;
             my %proto = @_ > 1 ? @_ : (code => shift( @_ ));
             my ( $caller, $file, $line ) = caller;
             $caller->fennec_meta->workflow->add_item(
-                __PACKAGE__->new( $name,
+                $exporter->new( $name,
                     file => $file,
                     line => $line,
+                    created_in => $$,
                     %proto
                 )
             );
         }
     );
-    no strict 'refs';
-    *{ "$exporter\::import" } = &_import;
 }
 
 sub _import {
@@ -63,6 +67,11 @@ sub new {
     my $name = shift;
     my %proto = @_;
     return bless( { %proto, name => $name }, $class );
+}
+
+sub merge_tap {
+    my $self = shift;
+    warn @_;
 }
 
 1;
