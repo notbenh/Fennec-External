@@ -32,4 +32,36 @@ testc its_not_ok => (
     C_CODE
 );
 
+tests template {
+    my $template = Fennec::External::C->new(
+        'name',
+        observed => 1,
+        code => "XXX",
+        c_includes => [ 'a', 'b' ],
+    )->template;
+
+    is(
+        $template,
+        <<'        EOT',
+#include <stdio.h>
+#include "a"
+#include "b"
+void ok( int result, char* name ) {
+    if ( result ) {
+        printf("ok - %s\n", name);
+    }
+    else {
+        printf("not ok - %s\n", name);
+    }
+}
+
+int main(void) {
+    XXX
+    return 0;
+}
+        EOT
+        "Template with includes"
+    );
+};
+
 1;

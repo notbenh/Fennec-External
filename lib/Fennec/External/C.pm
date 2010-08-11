@@ -7,8 +7,8 @@ use Fennec::Runner qw/ add_config /;
 use Fennec::Util::Accessors;
 use Carp;
 
-add_config $_ for qw/ c_compiler c_compiler_args /;
-Accessors qw/ c_compiler c_compiler_args no_tap_merge /;
+add_config $_ for qw/ c_compiler c_compiler_args c_includes /;
+Accessors qw/ c_compiler c_compiler_args no_tap_merge c_includes /;
 
 sub execute {
     my $self = shift;
@@ -58,8 +58,12 @@ sub execute {
 sub template {
     my $self = shift;
     my $code = $self->code;
+    my $include = join "\n", map { "#include \"$_\"" }
+        @{ $self->c_includes || Fennec::Runner->c_includes || [] };
+
     return <<TEMPLATE;
 #include <stdio.h>
+$include
 void ok( int result, char* name ) {
     if ( result ) {
         printf("ok - %s\\n", name);
@@ -94,6 +98,7 @@ Fennec::External::C - Test C code with Fennec
 
     Fennec::Runner->c_compiler( 'gcc' );
     Fennec::Runner->c_compiler_args( '$infile -o $outfile' );
+    Fennec::Runner->c_includes([ './MyHeader.h' ]);
 
     testc its_ok => <<C_CODE;
         // ok() is provided to your c code.
@@ -110,6 +115,7 @@ Fennec::External::C - Test C code with Fennec
         // The failure well not be registered by Fennec
         // when no_tap_merge is set.
         no_tap_merge => 1,
+        c_includes => [ './MyHeader2.h' ];
         code => <<'    C_CODE',
             ok( 0, "Should fail" );
         C_CODE

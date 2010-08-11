@@ -13,7 +13,7 @@ use Fennec::Util::Alias qw/
     Fennec::Output::Diag
 /;
 
-our $VERSION = "0.001";
+our $VERSION = "0.002";
 
 Accessors qw/code/;
 
