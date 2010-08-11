@@ -1,0 +1,44 @@
+NAME
+    Fennec::External - Test non-perl code with Fennec
+
+CURRENT LANGUAGES
+    C   C is supported, See Fennec::External::C and Fennec::External::C::Raw
+
+PLANNED SUPPORT
+    Perl6
+        Perl6 support is planned soon.
+
+ADDING SUPPORT FOR A LANGUAGE
+        package Fennec::External::MyLang;
+        use strict;
+        use warnings;
+        use Fennec::External 'KEYWORD';
+
+        sub execute {
+            my $self = shift;
+            my ( $fennec_test_obj ) = @_;
+            my $external_code = $self->code;
+
+            my ($pass, $tap) = process_code( $external_code );
+            $self->merge_tap( $tap )
+            return $pass;
+        }
+
+        sub process_code { ... }
+
+    Override the execute() method, it should process your code then return
+    true/false for pass or fail. If your external code produces TAP output
+    you should capture it and pass it to $self->merge_tap( $tap ).
+
+AUTHORS
+    Chad Granum exodist7@gmail.com
+
+COPYRIGHT
+    Copyright (C) 2010 Chad Granum
+
+    Fennec is free software; Standard perl licence.
+
+    Fennec is distributed in the hope that it will be useful, but WITHOUT
+    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+    FITNESS FOR A PARTICULAR PURPOSE. See the license for more details.
+

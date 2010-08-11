@@ -6,16 +6,16 @@ use Fennec::Util::Accessors;
 use Carp;
 use TAP::Parser;
 
+use base 'Fennec::TestSet';
+
 use Fennec::Util::Alias qw/
     Fennec::Output::Result
     Fennec::Output::Diag
 /;
 
-Accessors qw/code/;
-
-use base 'Fennec::TestSet';
-
 our $VERSION = "0.001";
+
+Accessors qw/code/;
 
 sub execute { croak "must override execute()"         }
 sub method  { confess "method() should not be called" }
@@ -107,3 +107,66 @@ sub _merge_comment {
 }
 
 1;
+
+__END__
+
+=head1 NAME
+
+Fennec::External - Test non-perl code with Fennec
+
+=head1 CURRENT LANGUAGES
+
+=over 4
+
+=item C
+
+C is supported, See L<Fennec::External::C> and L<Fennec::External::C::Raw>
+
+=back
+
+=head1 PLANNED SUPPORT
+
+=over 4
+
+=item Perl6
+
+Perl6 support is planned soon.
+
+=back
+
+=head1 ADDING SUPPORT FOR A LANGUAGE
+
+    package Fennec::External::MyLang;
+    use strict;
+    use warnings;
+    use Fennec::External 'KEYWORD';
+
+    sub execute {
+        my $self = shift;
+        my ( $fennec_test_obj ) = @_;
+        my $external_code = $self->code;
+
+        my ($pass, $tap) = process_code( $external_code );
+        $self->merge_tap( $tap )
+        return $pass;
+    }
+
+    sub process_code { ... }
+
+Override the execute() method, it should process your code then return
+true/false for pass or fail. If your external code produces TAP output you
+should capture it and pass it to $self->merge_tap( $tap ).
+
+=head1 AUTHORS
+
+Chad Granum L<exodist7@gmail.com>
+
+=head1 COPYRIGHT
+
+Copyright (C) 2010 Chad Granum
+
+Fennec is free software; Standard perl licence.
+
+Fennec is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the license for more details.
